@@ -1,4 +1,6 @@
 import React from 'react';
+import { Provider } from 'react-redux';
+import { store } from './App/store';
 import reportWebVitals from './reportWebVitals';
 import ReactDOM from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
@@ -11,13 +13,17 @@ import 'bootstrap-icons/font/bootstrap-icons.css';
 const root = ReactDOM.createRoot(document.getElementById('root'));
 
 root.render(
+<Provider store={store}>
 <React.StrictMode> 
   <BrowserRouter> 
   <CartProvider> 
+     
     <App /> 
+    
   </CartProvider> 
   </BrowserRouter>
 </React.StrictMode>
+</Provider>
 );
 
 

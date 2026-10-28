@@ -1,92 +1,117 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
+import { useDispatch, useSelector } from 'react-redux';
 import { useCart } from '../CartContext';
-
+import {
+  fetchProducts,
+  setCategory,
+} from '../features/product/productsSlice';
 function Products() {
-const [products, setProducts] = useState([]);
-const [loading, setLoading] = useState(true);
-const [error, setError] = useState(false);
+const dispatch = useDispatch();
+
+const { items: products, status, error } = useSelector(
+(state) => state.products
+);
 
 const [searchParams, setSearchParams] = useSearchParams();
-const category = searchParams.get('category');
 
+const category = useSelector(
+  (state) => state.products.selectedCategory
+);
 const { addToCart } = useCart();
 
 const handleAddToCart = (product) => {
 addToCart(product);
-
 };
 
 useEffect(() => {
-fetch('https://fakestoreapi.com/products')
-.then(res => {
-if (!res.ok) {
-throw new Error('Failed to fetch products');
+if (status === 'idle') {
+dispatch(fetchProducts());
 }
-return res.json();
-})
-.then(data => setProducts(data))
-.catch(() => setError(true))
-.finally(() => setLoading(false));
-}, []);
+}, [dispatch, status]);
 
-const filteredProducts = category
-? products.filter(product => product.category === category)
-: products;
+useEffect(() => {
+  const urlCategory = searchParams.get('category');
 
-if (loading) {
+  dispatch(setCategory(urlCategory || 'all'));
+}, [searchParams, dispatch]);
+
+const filteredProducts =
+  category === 'all'
+    ? products
+    : products.filter(
+        (product) => product.category === category
+      );
+
+if (status === 'idle' || status === 'loading') {
 return <p className="text-center mt-5">Loading products...</p>;
 }
 
-if (error) {
+if (status === 'failed') {
 return ( <p className="text-center mt-5 text-danger">
-Failed to load products. Please try again. </p>
+Failed to load products. Please try again. {error} </p>
 );
 }
 
-return ( <div className="products-page"> <h2 className="mb-4">
-{category ? category : 'All Products'} </h2>
+return ( <div className="products-page"> 
+<h2 className="mb-4">
+  {category === 'all' ? 'All Products' : category}
+</h2>
 
+<div className="d-flex justify-content-center flex-wrap gap-2 mb-4">
+  <button
+    className="btn btn-dark"
+    onClick={() => {
+      dispatch(setCategory('all'));
+      setSearchParams({});
+    }}
+  >
+    All Products
+  </button>
 
-  <div className="d-flex justify-content-center flex-wrap gap-2 mb-4">
-    <button
-      className="btn btn-dark"
-      onClick={() => setSearchParams({})}
-    >
-      All Products
-    </button>
+  <button
+    className="btn btn-danger"
+    onClick={() => {
+      dispatch(setCategory('electronics'));
+      setSearchParams({ category: 'electronics' });
+    }}
+  >
+    Electronics
+  </button>
 
-    <button
-      className="btn btn-danger"
-      onClick={() => setSearchParams({ category: 'electronics' })}
-    >
-      Electronics
-    </button>
+  <button
+    className="btn btn-danger"
+    onClick={() => {
+      dispatch(setCategory('jewelery'));
+      setSearchParams({ category: 'jewelery' });
+    }}
+  >
+    Jewelry
+  </button>
 
-    <button
-      className="btn btn-danger"
-      onClick={() => setSearchParams({ category: 'jewelery' })}
-    >
-      Jewelry
-    </button>
+  <button
+    className="btn btn-danger"
+    onClick={() => {
+      dispatch(setCategory("men's clothing"));
+      setSearchParams({ category: "men's clothing" });
+    }}
+  >
+    Men's Clothing
+  </button>
 
-    <button
-      className="btn btn-danger"
-      onClick={() => setSearchParams({ category: "men's clothing" })}
-    >
-      Men's Clothing
-    </button>
-
-    <button
-      className="btn btn-danger"
-      onClick={() => setSearchParams({ category: "women's clothing" })}
-    >
-      Women's Clothing
-    </button>
-  </div>
+  <button
+    className="btn btn-danger"
+    onClick={() => {
+      dispatch(setCategory("women's clothing"));
+      setSearchParams({ category: "women's clothing" });
+    }}
+  >
+    Women's Clothing
+  </button>
+</div>
 
   <div className="row">
-    {filteredProducts.map(product => (
+    {filteredProducts.map((product) => (
       <div className="col-md-4 mb-4" key={product.id}>
         <Link
           to={
@@ -103,7 +128,7 @@ return ( <div className="products-page"> <h2 className="mb-4">
               alt={product.title}
               style={{
                 height: '200px',
-                objectFit: 'contain'
+                objectFit: 'contain',
               }}
             />
 
@@ -123,15 +148,16 @@ return ( <div className="products-page"> <h2 className="mb-4">
               </span>
 
               <button
-  className="btn btn-danger mt-2"
-  onClick={(event) => {
-    event.preventDefault();
-    event.stopPropagation();
-    handleAddToCart(product);
-  }}
->
-  Add to Cart
-</button>   </div>
+                className="btn btn-danger mt-2"
+                onClick={(event) => {
+                  event.preventDefault();
+                  event.stopPropagation();
+                  handleAddToCart(product);
+                }}
+              >
+                Add to Cart
+              </button>
+            </div>
           </div>
         </Link>
       </div>
