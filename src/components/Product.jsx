@@ -1,56 +1,40 @@
-import React, { useEffect, useState } from 'react';
-import { Link, useParams, useSearchParams } from 'react-router-dom';
-import { useNavigate } from 'react-router-dom';
+import React, { useEffect } from 'react';
+import { Link, useParams, useSearchParams, useNavigate } from 'react-router-dom';
+import { useDispatch, useSelector } from 'react-redux';
 import { useCart } from '../CartContext';
+import { fetchProductById } from '../features/product/productsSlice';
 
 function Product() {
 const { productId } = useParams();
 const [searchParams] = useSearchParams();
 const category = searchParams.get('category');
 
-const [product, setProduct] = useState(null);
-const [loading, setLoading] = useState(true);
-const [error, setError] = useState(false);
-
+const dispatch = useDispatch();
 const navigate = useNavigate();
+
+const { selectedProduct: product, detailStatus, detailError } = useSelector(
+(state) => state.products
+);
+
 const { addToCart } = useCart();
 
+useEffect(() => {
+dispatch(fetchProductById(productId));
+}, [dispatch, productId]);
+
 const handleAddToCart = () => {
-  addToCart(product);
+if (product) {
+addToCart(product);
+}
 };
 
-
-
-useEffect(() => {
-setLoading(true);
-setError(false);
-setProduct(null);
-
-fetch(`https://fakestoreapi.com/products/${productId}`)
-  .then(res => {
-    if (!res.ok) {
-      throw new Error('Failed to fetch product');
-    }
-    return res.json();
-  })
-  .then(data => {
-    setProduct(data);
-  })
-  .catch(() => {
-    setError(true);
-  })
-  .finally(() => {
-    setLoading(false);
-  });
-
-}, [productId]);
-
-if (loading) {
+if (detailStatus === 'loading' || detailStatus === 'idle') {
 return <p className="text-center mt-5">Loading product details...</p>;
 }
 
-if (error || !product || !product.id) {
-return ( <div className="container text-center mt-5"> <h3>Product not found!</h3> <Link to="/products" className="btn btn-danger mt-3">
+if (detailStatus === 'failed' || !product || !product.id) {
+return ( <div className="container text-center mt-5"> <h3>Product not found!</h3>
+{detailError && <p>{detailError}</p>} <Link to="/products" className="btn btn-danger mt-3">
 Back to Products </Link> </div>
 );
 }
@@ -98,26 +82,25 @@ className="btn btn-dark mb-4"
           {' '}({product.rating.count} reviews)
         </p>
       )}
-      
-      <div className="mt-4">
-  <button
-    className="btn btn-danger me-3"
-    onClick={handleAddToCart}
-  >
-    Add to Cart
-  </button>
 
-  <button
-    className="btn btn-dark"
-    onClick={() => navigate('/cart')}
-  >
-    Go to Cart
-  </button>
-</div>
+      <div className="mt-4">
+        <button
+          className="btn btn-danger me-3"
+          onClick={handleAddToCart}
+        >
+          Add to Cart
+        </button>
+
+        <button
+          className="btn btn-dark"
+          onClick={() => navigate('/cart')}
+        >
+          Go to Cart
+        </button>
+      </div>
     </div>
   </div>
 </div>
-
 
 
 );
